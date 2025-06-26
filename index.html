@@ -83,22 +83,27 @@
         }
         
         .bot-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-10px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
         
         .bot-icon {
             height: 120px;
-            background: #f8f9fa;
+            background: #000;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
         }
         
-        .bot-icon img {
+        .bot-icon-image {
             width: 80px;
             height: 80px;
+            border-radius: 50%;
             object-fit: contain;
+            background: #000;
+            padding: 5px;
+            border: 3px solid var(--primary);
         }
         
         .bot-content {
@@ -134,7 +139,6 @@
             color: var(--primary);
             margin-right: 0.5rem;
             font-size: 0.8rem;
-            min-width: 15px;
         }
         
         .bot-link {
@@ -153,6 +157,7 @@
         
         .bot-link:hover {
             background: var(--primary-dark);
+            transform: translateY(-2px);
         }
         
         .bot-link i {
@@ -166,23 +171,32 @@
             overflow: hidden;
             box-shadow: var(--shadow);
             display: flex;
+            transition: var(--transition);
+        }
+        
+        .channel-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         }
         
         .channel-icon {
             width: 150px;
-            background: #f8f9fa;
+            background: #000;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            padding: 20px;
+            position: relative;
         }
         
-        .channel-icon img {
-            width: 100%;
-            height: auto;
-            max-height: 110px;
+        .channel-icon-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
             object-fit: contain;
+            background: #000;
+            padding: 5px;
+            border: 3px solid #6c5ce7;
         }
         
         .channel-content {
@@ -254,6 +268,7 @@
         
         .social-link:hover {
             color: var(--primary-dark);
+            transform: translateY(-3px);
         }
         
         @media (max-width: 768px) {
@@ -267,12 +282,12 @@
             
             .channel-icon {
                 width: 100%;
-                height: auto;
-                padding: 20px;
+                height: 120px;
             }
             
-            .channel-icon img {
-                max-height: 80px;
+            .channel-icon-image {
+                width: 80px;
+                height: 80px;
             }
             
             h1 {
@@ -291,7 +306,7 @@
         <div class="bots-grid">
             <div class="channel-card">
                 <div class="channel-icon">
-                    <img src="https://raw.githubusercontent.com/svnig7/images/refs/heads/main/7bots.png" alt="Bots Channel">
+                    <img src="https://raw.githubusercontent.com/svnig7/images/refs/heads/main/7bots.png" alt="Bots Channel" class="channel-icon-image">
                 </div>
                 <div class="channel-content">
                     <h2 class="channel-name">Bots Channel</h2>
@@ -322,7 +337,7 @@
             
             <div class="bot-card">
                 <div class="bot-icon">
-                    <img src="https://raw.githubusercontent.com/svnig7/images/refs/heads/main/movieandtvseriesbot.png" alt="MVNDSRS Bot">
+                    <img src="https://raw.githubusercontent.com/svnig7/images/refs/heads/main/movieandtvseriesbot.png" alt="MVNDSRS Bot" class="bot-icon-image">
                 </div>
                 <div class="bot-content">
                     <h3 class="bot-name">MVNDSRS Bot</h3>
@@ -344,7 +359,7 @@
             
             <div class="bot-card">
                 <div class="bot-icon">
-                    <img src="https://raw.githubusercontent.com/svnig7/images/refs/heads/main/streambot.png" alt="STRM Bot">
+                    <img src="https://raw.githubusercontent.com/svnig7/images/refs/heads/main/streambot.png" alt="STRM Bot" class="bot-icon-image">
                 </div>
                 <div class="bot-content">
                     <h3 class="bot-name">STRM Bot</h3>
@@ -366,7 +381,7 @@
             
             <div class="bot-card">
                 <div class="bot-icon">
-                    <img src="https://raw.githubusercontent.com/svnig7/images/refs/heads/main/contactbot.png" alt="CNTCT Bot">
+                    <img src="https://raw.githubusercontent.com/svnig7/images/refs/heads/main/contactbot.png" alt="CNTCT Bot" class="bot-icon-image">
                 </div>
                 <div class="bot-content">
                     <h3 class="bot-name">CNTCT Bot</h3>
@@ -387,8 +402,8 @@
             </div>
             
             <div class="bot-card">
-                <div class="bot-icon">
-                    <i class="fas fa-plus-circle" style="font-size: 3rem; color: var(--primary);"></i>
+                <div class="bot-icon" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+                    <i class="fas fa-plus-circle" style="font-size: 3rem; color: white;"></i>
                 </div>
                 <div class="bot-content">
                     <h3 class="bot-name">More Coming Soon</h3>
@@ -411,8 +426,8 @@
         <footer>
             <p>© 2023 My Telegram Bots. All rights reserved.</p>
             <div class="social-links">
-                <a href="https://t.me/bots_7_bots" class="social-link" target="_blank" title="Telegram"><i class="fab fa-telegram"></i></a>
-                <a href="https://github.com/svnig7" class="social-link" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+                <a href="https://t.me/bots_7_bots" class="social-link" target="_blank"><i class="fab fa-telegram"></i></a>
+                <a href="https://github.com/svnig7" class="social-link" target="_blank"><i class="fab fa-github"></i></a>
             </div>
         </footer>
     </div>
