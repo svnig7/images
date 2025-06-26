@@ -3,225 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Telegram Bots</title>
+    <title>My Premium Telegram Bots</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #0088cc;
-            --dark: #1e293b;
-            --light: #f8fafc;
-            --gradient: linear-gradient(135deg, #0088cc 0%, #00cccc 100%);
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            --primary-dark: #006699;
+            --secondary: #2ecc71;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --gradient: linear-gradient(135deg, #0088cc, #2ecc71);
         }
         
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: #f1f5f9;
-            color: var(--dark);
-            line-height: 1.6;
-        }
-        
-        .container {
-            max-width: 1200px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f9f9f9;
+            color: #333;
         }
         
         header {
             text-align: center;
-            margin-bottom: 3rem;
-            padding: 2rem 0;
+            margin-bottom: 40px;
+            padding: 20px 0;
+            background: var(--gradient);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
-        .logo {
+        h1 {
             font-size: 2.5rem;
-            font-weight: 700;
-            background: var(--gradient);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            margin-bottom: 1rem;
+            margin: 0;
+            padding: 10px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
         }
         
         .subtitle {
-            color: #64748b;
             font-size: 1.1rem;
-            max-width: 600px;
-            margin: 0 auto;
+            opacity: 0.9;
+            margin-top: 10px;
         }
         
-        .bots-grid {
+        .bot-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
         }
         
         .bot-card {
             background: white;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
         }
         
         .bot-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         }
         
         .bot-header {
             background: var(--gradient);
             color: white;
-            padding: 1.5rem;
+            padding: 15px;
             position: relative;
         }
         
-        .bot-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-        
         .bot-name {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
+            font-weight: bold;
+            font-size: 1.3rem;
+            margin: 0;
         }
         
-        .bot-username {
-            opacity: 0.9;
-            font-size: 0.9rem;
+        .bot-icon {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            font-size: 1.5rem;
         }
         
-        .bot-body {
-            padding: 1.5rem;
+        .bot-content {
+            padding: 20px;
         }
         
         .bot-description {
-            color: #64748b;
-            margin-bottom: 1.5rem;
-            font-size: 0.95rem;
+            margin-bottom: 20px;
+            color: #555;
+        }
+        
+        .bot-features {
+            margin-bottom: 20px;
+        }
+        
+        .bot-features li {
+            margin-bottom: 8px;
+            position: relative;
+            padding-left: 25px;
+        }
+        
+        .bot-features li:before {
+            content: "\f00c";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--secondary);
         }
         
         .bot-link {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: var(--gradient);
+            background: var(--primary);
             color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
+            padding: 10px 20px;
             text-decoration: none;
+            border-radius: 30px;
             font-weight: 500;
             transition: all 0.3s ease;
-            width: 100%;
+            width: calc(100% - 40px);
+            margin: 0 20px 20px;
         }
         
         .bot-link:hover {
-            opacity: 0.9;
+            background: var(--primary-dark);
             transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
         }
         
         .bot-link i {
             margin-right: 8px;
         }
         
+        .premium-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #f39c12;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+        
         footer {
             text-align: center;
-            margin-top: 4rem;
-            padding: 2rem 0;
-            color: #64748b;
+            margin-top: 50px;
+            padding: 20px;
+            color: #777;
             font-size: 0.9rem;
         }
         
         @media (max-width: 768px) {
-            .container {
-                padding: 1.5rem;
+            .bot-grid {
+                grid-template-columns: 1fr;
             }
             
-            .bots-grid {
-                grid-template-columns: 1fr;
+            h1 {
+                font-size: 2rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo">Telegram Bots Suite</div>
-            <p class="subtitle">Premium automation solutions powered by AI and cutting-edge technology</p>
-        </header>
-        
-        <div class="bots-grid">
-            <!-- Channel Card -->
-            <div class="bot-card">
-                <div class="bot-header">
-                    <div class="bot-icon"><i class="fas fa-broadcast-tower"></i></div>
-                    <div class="bot-name">Bots Channel</div>
-                    <div class="bot-username">@bots_7_bots</div>
-                </div>
-                <div class="bot-body">
-                    <p class="bot-description">Official channel for updates, announcements, and news about all our Telegram bots and services.</p>
-                    <a href="https://t.me/bots_7_bots" class="bot-link" target="_blank">
-                        <i class="fab fa-telegram"></i> Join Channel
-                    </a>
-                </div>
+    <header>
+        <h1>My Premium Telegram Bots</h1>
+        <div class="subtitle">Powerful automation solutions for your Telegram experience</div>
+    </header>
+    
+    <div class="bot-grid">
+        <div class="bot-card">
+            <div class="premium-badge">PREMIUM</div>
+            <div class="bot-header">
+                <div class="bot-name">Bots Channel</div>
+                <div class="bot-icon"><i class="fas fa-broadcast-tower"></i></div>
             </div>
-            
-            <!-- MVNDSRS Bot Card -->
-            <div class="bot-card">
-                <div class="bot-header">
-                    <div class="bot-icon"><i class="fas fa-robot"></i></div>
-                    <div class="bot-name">MVNDSRS Bot</div>
-                    <div class="bot-username">@mvndsrs_7bot</div>
+            <div class="bot-content">
+                <div class="bot-description">
+                    Official channel for all my premium Telegram bots. Get updates, announcements, and exclusive content.
                 </div>
-                <div class="bot-body">
-                    <p class="bot-description">Advanced multi-functional bot with premium features for automation, moderation, and utilities.</p>
-                    <a href="https://t.me/mvndsrs_7bot" class="bot-link" target="_blank">
-                        <i class="fab fa-telegram"></i> Open Bot
-                    </a>
-                </div>
-            </div>
-            
-            <!-- STRM Bot Card -->
-            <div class="bot-card">
-                <div class="bot-header">
-                    <div class="bot-icon"><i class="fas fa-film"></i></div>
-                    <div class="bot-name">STRM Bot</div>
-                    <div class="bot-username">@strm_7bot</div>
-                </div>
-                <div class="bot-body">
-                    <p class="bot-description">Premium media streaming and download solution with support for multiple platforms and formats.</p>
-                    <a href="https://t.me/strm_7bot" class="bot-link" target="_blank">
-                        <i class="fab fa-telegram"></i> Open Bot
-                    </a>
-                </div>
-            </div>
-            
-            <!-- CNTCT Bot Card -->
-            <div class="bot-card">
-                <div class="bot-header">
-                    <div class="bot-icon"><i class="fas fa-address-book"></i></div>
-                    <div class="bot-name">CNTCT Bot</div>
-                    <div class="bot-username">@cntct_7bot</div>
-                </div>
-                <div class="bot-body">
-                    <p class="bot-description">Smart contact management system with CRM features and seamless integration capabilities.</p>
-                    <a href="https://t.me/cntct_7bot" class="bot-link" target="_blank">
-                        <i class="fab fa-telegram"></i> Open Bot
-                    </a>
-                </div>
+                <ul class="bot-features">
+                    <li>Latest bot releases and updates</li>
+                    <li>Exclusive tips and tutorials</li>
+                    <li>Community support</li>
+                    <li>Beta testing opportunities</li>
+                </ul>
+                <a href="https://t.me/bots_7_bots" class="bot-link" target="_blank">
+                    <i class="fab fa-telegram"></i> Join Channel
+                </a>
             </div>
         </div>
         
-        <footer>
-            <p>© 2023 Premium Telegram Bots Suite. All rights reserved.</p>
-            <p>Powered by cutting-edge technology and AI solutions.</p>
-        </footer>
+        <div class="bot-card">
+            <div class="premium-badge">PRO</div>
+            <div class="bot-header">
+                <div class="bot-name">MVNDSRS Bot</div>
+                <div class="bot-icon"><i class="fas fa-robot"></i></div>
+            </div>
+            <div class="bot-content">
+                <div class="bot-description">
+                    Advanced automation bot with premium features for managing your Telegram experience.
+                </div>
+                <ul class="bot-features">
+                    <li>Smart chat automation</li>
+                    <li>Custom command creation</li>
+                    <li>Data analysis tools</li>
+                    <li>Multi-language support</li>
+                    <li>24/7 uptime</li>
+                </ul>
+                <a href="https://t.me/mvndsrs_7bot" class="bot-link" target="_blank">
+                    <i class="fab fa-telegram"></i> Open Bot
+                </a>
+            </div>
+        </div>
+        
+        <div class="bot-card">
+            <div class="premium-badge">PRO</div>
+            <div class="bot-header">
+                <div class="bot-name">STRM Bot</div>
+                <div class="bot-icon"><i class="fas fa-film"></i></div>
+            </div>
+            <div class="bot-content">
+                <div class="bot-description">
+                    Premium media management bot for handling all your streaming and content needs.
+                </div>
+                <ul class="bot-features">
+                    <li>Media conversion tools</li>
+                    <li>Streaming link generation</li>
+                    <li>Content organization</li>
+                    <li>High-speed processing</li>
+                    <li>Cloud storage integration</li>
+                </ul>
+                <a href="https://t.me/strm_7bot" class="bot-link" target="_blank">
+                    <i class="fab fa-telegram"></i> Open Bot
+                </a>
+            </div>
+        </div>
+        
+        <div class="bot-card">
+            <div class="premium-badge">PRO</div>
+            <div class="bot-header">
+                <div class="bot-name">CNTCT Bot</div>
+                <div class="bot-icon"><i class="fas fa-address-book"></i></div>
+            </div>
+            <div class="bot-content">
+                <div class="bot-description">
+                    Professional contact management system with advanced organization features.
+                </div>
+                <ul class="bot-features">
+                    <li>Contact database</li>
+                    <li>Smart search functionality</li>
+                    <li>Import/export tools</li>
+                    <li>Reminders and follow-ups</li>
+                    <li>Encrypted storage</li>
+                </ul>
+                <a href="https://t.me/cntct_7bot" class="bot-link" target="_blank">
+                    <i class="fab fa-telegram"></i> Open Bot
+                </a>
+            </div>
+        </div>
     </div>
+    
+    <footer>
+        <p>© 2023 Premium Telegram Bots | All Rights Reserved</p>
+        <p>Contact: <a href="mailto:support@bots7.com">support@bots7.com</a></p>
+    </footer>
 </body>
 </html>
