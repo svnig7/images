@@ -179,7 +179,22 @@
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         }
         
-        .channel-icon {
+        .group-card {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            display: flex;
+            transition: var(--transition);
+        }
+        
+        .group-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .channel-icon, .group-icon {
             width: 150px;
             background: #000;
             display: flex;
@@ -189,7 +204,7 @@
             position: relative;
         }
         
-        .channel-icon-image {
+        .channel-icon-image, .group-icon-image {
             width: 100px;
             height: 100px;
             border-radius: 50%;
@@ -199,25 +214,25 @@
             border: 3px solid #6c5ce7;
         }
         
-        .channel-content {
+        .channel-content, .group-content {
             padding: 2rem;
             flex-grow: 1;
         }
         
-        .channel-name {
+        .channel-name, .group-name {
             font-size: 1.6rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
             color: #6c5ce7;
         }
         
-        .channel-description {
+        .channel-description, .group-description {
             color: var(--secondary);
             margin-bottom: 1.5rem;
             max-width: 800px;
         }
         
-        .channel-stats {
+        .channel-stats, .group-stats {
             display: flex;
             gap: 2rem;
             margin-bottom: 1.5rem;
@@ -276,16 +291,16 @@
                 grid-template-columns: 1fr;
             }
             
-            .channel-card {
+            .channel-card, .group-card {
                 flex-direction: column;
             }
             
-            .channel-icon {
+            .channel-icon, .group-icon {
                 width: 100%;
                 height: 120px;
             }
             
-            .channel-icon-image {
+            .channel-icon-image, .group-icon-image {
                 width: 80px;
                 height: 80px;
             }
@@ -397,6 +412,35 @@
                     
                     <a href="https://t.me/cntct_7bot" class="bot-link" target="_blank">
                         Contact Now <i class="fab fa-telegram"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="group-card">
+                <div class="group-icon">
+                    <img src="https://raw.githubusercontent.com/svnig7/images/refs/heads/main/requestgroup.png" alt="Request Group" class="group-icon-image">
+                </div>
+                <div class="group-content">
+                    <h2 class="group-name">Request Group</h2>
+                    <p class="group-description">Join our request group to suggest new features, report issues, or make content requests for our bots.</p>
+                    
+                    <div class="group-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-comments"></i>
+                            <span class="stat-label">Active community</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-lightbulb"></i>
+                            <span class="stat-label">Feature requests</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-headset"></i>
+                            <span class="stat-label">Quick support</span>
+                        </div>
+                    </div>
+                    
+                    <a href="https://t.me/rqstgrp7" class="bot-link" target="_blank">
+                        Join Group <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
             </div>
