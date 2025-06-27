@@ -179,6 +179,21 @@
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         }
         
+        .cinema-card {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            display: flex;
+            transition: var(--transition);
+        }
+        
+        .cinema-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
         .group-card {
             grid-column: 1 / -1;
             background: white;
@@ -194,7 +209,7 @@
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         }
         
-        .channel-icon, .group-icon {
+        .channel-icon, .group-icon, .cinema-icon {
             width: 150px;
             background: #000;
             display: flex;
@@ -204,35 +219,60 @@
             position: relative;
         }
         
-        .channel-icon-image, .group-icon-image {
+        .channel-icon-image, .group-icon-image, .cinema-icon-image {
             width: 100px;
             height: 100px;
             border-radius: 50%;
             object-fit: contain;
             background: #000;
             padding: 5px;
+        }
+        
+        .channel-icon-image {
             border: 3px solid #6c5ce7;
         }
         
-        .channel-content, .group-content {
+        .group-icon-image {
+            border: 3px solid #6c5ce7;
+        }
+        
+        .cinema-icon-image {
+            border: 3px solid #ffc107;
+        }
+        
+        .channel-content, .group-content, .cinema-content {
             padding: 2rem;
             flex-grow: 1;
         }
         
-        .channel-name, .group-name {
+        .channel-name {
             font-size: 1.6rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
             color: #6c5ce7;
         }
         
-        .channel-description, .group-description {
+        .group-name {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #6c5ce7;
+        }
+        
+        .cinema-name {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #ffc107;
+        }
+        
+        .channel-description, .group-description, .cinema-description {
             color: var(--secondary);
             margin-bottom: 1.5rem;
             max-width: 800px;
         }
         
-        .channel-stats, .group-stats {
+        .channel-stats, .group-stats, .cinema-stats {
             display: flex;
             gap: 2rem;
             margin-bottom: 1.5rem;
@@ -243,8 +283,20 @@
             align-items: center;
         }
         
-        .stat-item i {
+        .channel-stats .stat-item i {
             color: #6c5ce7;
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        .group-stats .stat-item i {
+            color: #6c5ce7;
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        .cinema-stats .stat-item i {
+            color: #ffc107;
             margin-right: 0.5rem;
             font-size: 1.2rem;
         }
@@ -257,6 +309,26 @@
         .stat-label {
             color: var(--secondary);
             font-size: 0.9rem;
+        }
+        
+        .cinema-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffc107;
+            color: #000;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 500;
+            transition: var(--transition);
+            width: 100%;
+        }
+        
+        .cinema-link:hover {
+            background: #ffab00;
+            transform: translateY(-2px);
+            color: #000;
         }
         
         footer {
@@ -291,16 +363,16 @@
                 grid-template-columns: 1fr;
             }
             
-            .channel-card, .group-card {
+            .channel-card, .group-card, .cinema-card {
                 flex-direction: column;
             }
             
-            .channel-icon, .group-icon {
+            .channel-icon, .group-icon, .cinema-icon {
                 width: 100%;
                 height: 120px;
             }
             
-            .channel-icon-image, .group-icon-image {
+            .channel-icon-image, .group-icon-image, .cinema-icon-image {
                 width: 80px;
                 height: 80px;
             }
@@ -315,10 +387,39 @@
     <div class="container">
         <header>
             <h1>ᴍʏ ᴛᴇʟᴇɢʀᴀᴍ ʙᴏᴛs ᴄᴏʟʟᴇᴄᴛɪᴏɴ</h1>
-            <p class="subtitle">ᴅɪsᴄᴏᴠᴇʀ ᴍʏ ᴘᴏᴡᴇʀғᴜʟ ᴛᴇʟᴇɢʀᴀᴍ ʙᴏᴛs ᴅᴇsɪɢɴᴇᴅ ᴛᴏ ᴍᴀᴋᴇ ʏᴏᴜʀ ʟɪғᴇ ᴇᴀsɪᴇʀ ᴀɴᴅ ᴍᴏʀᴇ ᴘʀᴏᴅᴜᴄᴛɪᴠᴇ</p>
+            <p class="subtitle">ᴅɪsᴄᴏᴠᴇʀ ᴍʏ ᴘᴏᴡᴇʀғᴜʟ ᴛᴇʟᴇɢʀᴀᴍ ʙᴏᴛs ᴅᴇsɪɢɴᴇᴅ ᴛᴏ ᴍᴀᴋᴇ ʏᴏᴜʀ ʟɪғᴇ ᴇᴀsɪᴇʀ ᴀɴᴅ �ᴏʀᴇ ᴘʀᴏᴅᴜᴄᴛɪᴠᴇ</p>
         </header>
         
         <div class="bots-grid">
+            <div class="cinema-card">
+                <div class="cinema-icon">
+                    <img src="https://raw.githubusercontent.com/svnig7/svnig7/refs/heads/main/7cinema.png" alt="7 ᴄɪɴᴇᴍᴀ" class="cinema-icon-image">
+                </div>
+                <div class="cinema-content">
+                    <h2 class="cinema-name">7 ᴄɪɴᴇᴍᴀ</h2>
+                    <p class="cinema-description">ʏᴏᴜʀ ᴜʟᴛɪᴍᴀᴛᴇ ᴏɴʟɪɴᴇ ᴍᴏᴠɪᴇ ᴡᴀᴛᴄʜɪɴɢ ᴘʟᴀᴛғᴏʀᴍ. sᴛʀᴇᴀᴍ ᴛʜᴇ ʟᴀᴛᴇsᴛ ᴍᴏᴠɪᴇs ᴀɴᴅ ᴛᴠ sʜᴏᴡs ɪɴ ʜɪɢʜ ǫᴜᴀʟɪᴛʏ ᴡɪᴛʜᴏᴜᴛ ᴀɴʏ ᴀᴅs.</p>
+                    
+                    <div class="cinema-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-film"></i>
+                            <span class="stat-label">ᴛʜᴏᴜsᴀɴᴅs ᴏғ ᴍᴏᴠɪᴇs</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-tv"></i>
+                            <span class="stat-label">ᴘᴏᴘᴜʟᴀʀ sʜᴏᴡs</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-heart"></i>
+                            <span class="stat-label">ᴜsᴇʀ ғʀɪᴇɴᴅʟʏ</span>
+                        </div>
+                    </div>
+                    
+                    <a href="https://7cinema.vercel.app" class="cinema-link" target="_blank">
+                        ᴠɪsɪᴛ ɴᴏᴡ <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+            </div>
+            
             <div class="channel-card">
                 <div class="channel-icon">
                     <img src="https://raw.githubusercontent.com/svnig7/images/refs/heads/main/7bots.png" alt="ʙᴏᴛs ᴄʜᴀɴɴᴇʟ" class="channel-icon-image">
@@ -338,7 +439,7 @@
                         </div>
                         <div class="stat-item">
                             <i class="fas fa-bolt"></i>
-                            <span class="stat-label">ʀᴇɢᴜʟᴀʀ ᴜᴘᴅᴀᴛᴇs</span>
+                            <span class="stat-label">ʀᴇɢᴜʟᴀʀ �ᴜᴘᴅᴀᴛᴇs</span>
                         </div>
                     </div>
                     
@@ -361,7 +462,7 @@
                         <li><i class="fas fa-check"></i> ɢᴇᴛ ᴅɪʀᴇᴄᴛ ᴅᴏᴡɴʟᴏᴀᴅ/sᴛʀᴇᴀᴍ ʟɪɴᴋs</li>
                         <li><i class="fas fa-check"></i> ɪᴍᴅʙ ʀᴀᴛɪɴɢs, ʀᴜɴᴛɪᴍᴇ, ᴄᴀsᴛ & ᴍᴏʀᴇ</li>
                         <li><i class="fas fa-check"></i> ғʀᴇsʜ ᴄᴏɴᴛᴇɴᴛ ᴜᴘᴅᴀᴛᴇᴅ ʀᴇɢᴜʟᴀʀʟʏ</li>
-                        <li><i class="fas fa-check"></i> sᴍᴀʀᴛ ғɪʟᴛᴇʀs ғᴏʀ ᴏ̨ᴜᴀʟɪᴛʏ, ɢᴇɴʀᴇ, ʏᴇᴀʀ & ʟᴀɴɢᴜᴀɢᴇ</li>
+                        <li><i class="fas fa-check"></i> sᴍᴀʀᴛ ғɪʟᴛᴇʀs ғᴏʀ ǫᴜᴀʟɪᴛʏ, ɢᴇɴʀᴇ, ʏᴇᴀʀ & ʟᴀɴɢᴜᴀɢᴇ</li>
                     </ul>
                     
                     <a href="https://t.me/mvndsrs_7bot" class="bot-link" target="_blank">
@@ -408,11 +509,11 @@
             
             <div class="group-card">
                 <div class="group-icon">
-                    <img src="https://raw.githubusercontent.com/svnig7/images/refs/heads/main/requestgroup.png" alt="ʀᴇᴏ̨ᴜᴇsᴛ ɢʀᴏᴜᴘ" class="group-icon-image">
+                    <img src="https://raw.githubusercontent.com/svnig7/images/refs/heads/main/requestgroup.png" alt="ʀᴇǫᴜᴇsᴛ ɢʀᴏᴜᴘ" class="group-icon-image">
                 </div>
                 <div class="group-content">
-                    <h2 class="group-name">ʀᴇᴏ̨ᴜᴇsᴛ ɢʀᴏᴜᴘ</h2>
-                    <p class="group-description">ᴊᴏɪɴ ᴏᴜʀ ʀᴇᴏ̨ᴜᴇsᴛ ɢʀᴏᴜᴘ ᴛᴏ sᴜɢɢᴇsᴛ ɴᴇᴡ ғᴇᴀᴛᴜʀᴇs, ʀᴇᴘᴏʀᴛ ɪssᴜᴇs, ᴏʀ ᴍᴀᴋᴇ ᴄᴏɴᴛᴇɴᴛ ʀᴇᴏ̨ᴜᴇsᴛs ғᴏʀ ᴏᴜʀ ʙᴏᴛs.</p>
+                    <h2 class="group-name">ʀᴇǫᴜᴇsᴛ ɢʀᴏᴜᴘ</h2>
+                    <p class="group-description">ᴊᴏɪɴ ᴏᴜʀ ʀᴇǫᴜᴇsᴛ ɢʀᴏᴜᴘ ᴛᴏ sᴜɢɢᴇsᴛ ɴᴇᴡ ғᴇᴀᴛᴜʀᴇs, ʀᴇᴘᴏʀᴛ ɪssᴜᴇs, ᴏʀ ᴍᴀᴋᴇ ᴄᴏɴᴛᴇɴᴛ ʀᴇǫᴜᴇsᴛs ғᴏʀ ᴏᴜʀ ʙᴏᴛs.</p>
                     
                     <div class="group-stats">
                         <div class="stat-item">
@@ -421,11 +522,11 @@
                         </div>
                         <div class="stat-item">
                             <i class="fas fa-lightbulb"></i>
-                            <span class="stat-label">ғᴇᴀᴛᴜʀᴇ ʀᴇᴏ̨ᴜᴇsᴛs</span>
+                            <span class="stat-label">ғᴇᴀᴛᴜʀᴇ ʀᴇǫᴜᴇsᴛs</span>
                         </div>
                         <div class="stat-item">
                             <i class="fas fa-headset"></i>
-                            <span class="stat-label">ᴏ̨ᴜɪᴄᴋ sᴜᴘᴘᴏʀᴛ</span>
+                            <span class="stat-label">ǫᴜɪᴄᴋ sᴜᴘᴘᴏʀᴛ</span>
                         </div>
                     </div>
                     
