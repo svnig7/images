@@ -15,6 +15,10 @@
             --dark: #343a40;
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             --transition: all 0.3s ease;
+            --violet: #6c5ce7;
+            --violet-dark: #5649c0;
+            --green: #00b894;
+            --green-dark: #00a884;
         }
         
         * {
@@ -163,6 +167,27 @@
         .bot-link i {
             margin-left: 0.5rem;
         }
+
+        /* Green link style */
+        .green-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--green);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 500;
+            transition: var(--transition);
+            width: 100%;
+        }
+        
+        .green-link:hover {
+            background: var(--green-dark);
+            transform: translateY(-2px);
+            color: white;
+        }
         
         .channel-card {
             grid-column: 1 / -1;
@@ -229,11 +254,11 @@
         }
         
         .channel-icon-image {
-            border: 3px solid #6c5ce7;
+            border: 3px solid var(--violet);
         }
         
         .group-icon-image {
-            border: 3px solid #6c5ce7;
+            border: 3px solid var(--violet);
         }
         
         .cinema-icon-image {
@@ -249,14 +274,14 @@
             font-size: 1.6rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
-            color: #6c5ce7;
+            color: var(--violet);
         }
         
         .group-name {
             font-size: 1.6rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
-            color: #6c5ce7;
+            color: var(--violet);
         }
         
         .cinema-name {
@@ -284,13 +309,13 @@
         }
         
         .channel-stats .stat-item i {
-            color: #6c5ce7;
+            color: var(--violet);
             margin-right: 0.5rem;
             font-size: 1.2rem;
         }
         
         .group-stats .stat-item i {
-            color: #6c5ce7;
+            color: var(--violet);
             margin-right: 0.5rem;
             font-size: 1.2rem;
         }
@@ -329,6 +354,27 @@
             background: #ffab00;
             transform: translateY(-2px);
             color: #000;
+        }
+
+        /* Violet button styles */
+        .channel-link, .group-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--violet);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 500;
+            transition: var(--transition);
+            width: 100%;
+        }
+        
+        .channel-link:hover, .group-link:hover {
+            background: var(--violet-dark);
+            transform: translateY(-2px);
+            color: white;
         }
         
         footer {
@@ -387,7 +433,7 @@
     <div class="container">
         <header>
             <h1>ᴍʏ ᴛᴇʟᴇɢʀᴀᴍ ʙᴏᴛs ᴄᴏʟʟᴇᴄᴛɪᴏɴ</h1>
-            <p class="subtitle">ᴅɪsᴄᴏᴠᴇʀ ᴍʏ ᴘᴏᴡᴇʀғᴜʟ ᴛᴇʟᴇɢʀᴀᴍ ʙᴏᴛs ᴅᴇsɪɢɴᴇᴅ ᴛᴏ ᴍᴀᴋᴇ ʏᴏᴜʀ ʟɪғᴇ ᴇᴀsɪᴇʀ ᴀɴᴅ �ᴏʀᴇ ᴘʀᴏᴅᴜᴄᴛɪᴠᴇ</p>
+            <p class="subtitle">ᴅɪsᴄᴏᴠᴇʀ ᴍʏ ᴘᴏᴡᴇʀғᴜʟ ᴛᴇʟᴇɢʀᴀᴍ ʙᴏᴛs ᴅᴇsɪɢɴᴇᴅ ᴛᴏ ᴍᴀᴋᴇ ʏᴏᴜʀ ʟɪғᴇ ᴇᴀsɪᴇʀ ᴀɴᴅ ᴍᴏʀᴇ ᴘʀᴏᴅᴜᴄᴛɪᴠᴇ</p>
         </header>
         
         <div class="bots-grid">
@@ -415,7 +461,7 @@
                     </div>
                     
                     <a href="https://7cinema.vercel.app" class="cinema-link" target="_blank">
-                        ᴠɪsɪᴛ ɴᴏᴡ <i class="fas fa-external-link-alt"></i>
+                        ᴠɪsɪᴛ ɴᴏᴡ &nbsp;<i class="fas fa-external-link-alt"></i>
                     </a>
                 </div>
             </div>
@@ -439,12 +485,12 @@
                         </div>
                         <div class="stat-item">
                             <i class="fas fa-bolt"></i>
-                            <span class="stat-label">ʀᴇɢᴜʟᴀʀ �ᴜᴘᴅᴀᴛᴇs</span>
+                            <span class="stat-label">ʀᴇɢᴜʟᴀʀ ᴜᴘᴅᴀᴛᴇs</span>
                         </div>
                     </div>
                     
-                    <a href="https://t.me/bots_7_bots" class="bot-link" target="_blank">
-                        ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ <i class="fas fa-arrow-right"></i>
+                    <a href="https://t.me/bots_7_bots" class="channel-link" target="_blank">
+                        ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ &nbsp;<i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
             </div>
@@ -530,21 +576,21 @@
                         </div>
                     </div>
                     
-                    <a href="https://t.me/rqstgrp7" class="bot-link" target="_blank">
-                        ᴊᴏɪɴ ɢʀᴏᴜᴘ <i class="fas fa-arrow-right"></i>
+                    <a href="https://t.me/rqstgrp7" class="group-link" target="_blank">
+                        ᴊᴏɪɴ ɢʀᴏᴜᴘ &nbsp;<i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
             </div>
             
             <div class="bot-card">
-                <div class="bot-icon" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+                <div class="bot-icon" style="background: linear-gradient(135deg, var(--green), var(--green-dark));">
                     <i class="fas fa-plus-circle" style="font-size: 3rem; color: white;"></i>
                 </div>
                 <div class="bot-content">
-                    <h3 class="bot-name">ᴍᴏʀᴇ ᴄᴏᴍɪɴɢ sᴏᴏɴ</h3>
+                    <h3 class="bot-name" style="color: var(--green);">ᴍᴏʀᴇ ᴄᴏᴍɪɴɢ sᴏᴏɴ</h3>
                     <p class="bot-description">ɪ'ᴍ ᴄᴏɴsᴛᴀɴᴛʟʏ ᴡᴏʀᴋɪɴɢ ᴏɴ ɴᴇᴡ ʙᴏᴛs ᴛᴏ ᴇxᴘᴀɴᴅ ᴛʜɪs ᴄᴏʟʟᴇᴄᴛɪᴏɴ. sᴛᴀʏ ᴛᴜɴᴇᴅ ғᴏʀ ᴜᴘᴅᴀᴛᴇs !</p>
                     
-                    <a href="https://t.me/bots_7_bots" class="bot-link" target="_blank">
+                    <a href="https://t.me/bots_7_bots" class="green-link" target="_blank">
                         ɢᴇᴛ ᴜᴘᴅᴀᴛᴇs <i class="fas fa-bell"></i>
                     </a>
                 </div>
