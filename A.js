@@ -8,42 +8,54 @@ export default {
     const menuImage = "https://raw.githubusercontent.com/svnig7/svnig7/refs/heads/main/imdbbotl.png";
     const OWNER_ID = env.OWNER_ID;
 
-    // Track current menu messages per user
-    let currentMenuMessages = {};
+    // Helper to track current menu message in KV
+    async function getCurrentMenuMessage(userId) {
+      return await env.USER_CONFIG.get(`menu_msg:${userId}`);
+    }
 
-    // Helper to clean up old menus
-    async function cleanupOldMenus(api, userId) {
-      if (currentMenuMessages[userId]) {
+    async function setCurrentMenuMessage(userId, messageId) {
+      await env.USER_CONFIG.put(`menu_msg:${userId}`, messageId.toString());
+    }
+
+    async function cleanupOldMenu(api, userId) {
+      const oldMessageId = await getCurrentMenuMessage(userId);
+      if (oldMessageId) {
         try {
           await fetch(api("deleteMessage"), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: userId,
-              message_id: currentMenuMessages[userId]
+              message_id: oldMessageId
             })
           });
         } catch (e) {
           console.error("Failed to delete old menu:", e);
         }
-        delete currentMenuMessages[userId];
+        await env.USER_CONFIG.delete(`menu_msg:${userId}`);
       }
     }
 
     // === 1. Handle Channel Post ===
-    if (update.channel_post?.caption) {
+    if (update.channel_post) {
       const post = update.channel_post;
+      // Skip if no caption and no media (text-only posts would have caption or text)
+      if (!post.caption && !(post.photo || post.video || post.document)) {
+        return new Response('OK');
+      }
+
       const key = `channel:${post.chat.id}`;
       const configRaw = await env.USER_CONFIG.get(key);
       const config = configRaw ? JSON.parse(configRaw) : { 
-        style_template: "<b>{caption}</b>",
-        style_caption: true
+        style_template: "{caption}",
+        style_caption: false,
+        replacements: []
       };
       
-      let processedCaption = post.caption;
+      let processedCaption = post.caption || "";
       
-      // Apply replacements first (raw text only)
-      if (config.replacements?.length > 0) {
+      // Only apply replacements if explicitly enabled in config
+      if (config.replacements?.length > 0 && config.replacements_enabled) {
         for (const replacement of config.replacements) {
           try {
             if (replacement.enabled !== false) {
@@ -56,8 +68,8 @@ export default {
         }
       }
       
-      // Apply HTML styling if enabled
-      if (config.style_caption !== false && config.style_template) {
+      // Apply HTML styling only if explicitly enabled
+      if (config.style_caption && config.style_template) {
         try {
           processedCaption = config.style_template.replace('{caption}', processedCaption);
         } catch (e) {
@@ -67,16 +79,19 @@ export default {
       
       const newCaption = formatCaption(processedCaption, config);
 
-      await fetch(api("editMessageCaption"), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: post.chat.id,
-          message_id: post.message_id,
-          caption: newCaption,
-          parse_mode: 'HTML'
-        })
-      });
+      // Only edit if there was a caption to begin with and changes were made
+      if (post.caption && newCaption !== post.caption) {
+        await fetch(api("editMessageCaption"), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: post.chat.id,
+            message_id: post.message_id,
+            caption: newCaption,
+            parse_mode: 'HTML'
+          })
+        });
+      }
 
       const forwardConfig = await env.USER_CONFIG.get(`forward:${post.chat.id}`);
       if (forwardConfig && forwardConfig !== "disabled") {
@@ -105,13 +120,20 @@ export default {
           const broadcastMessage = text.substring("/broadcast ".length);
           const users = await env.USER_CONFIG.list({ prefix: "user:" });
           await sendText(api, userId, `Broadcasting to ${users.keys.length} users...`);
+          
+          const failedUsers = [];
           for (const user of users.keys) {
             try {
               await sendText(api, user.name.split(":")[1], broadcastMessage);
               await new Promise(resolve => setTimeout(resolve, 200)); // Rate limiting
             } catch (e) {
               console.error(`Failed to send to ${user.name}:`, e);
+              failedUsers.push(user.name.split(":")[1]);
             }
+          }
+          
+          if (failedUsers.length > 0) {
+            await sendText(api, userId, `Failed to send to ${failedUsers.length} users`);
           }
           return new Response('OK');
         }
@@ -174,7 +196,7 @@ export default {
               return new Response('OK');
             }
             
-            config.replacements = config.replacements || [];
+            if (!Array.isArray(config.replacements)) config.replacements = [];
             config.replacements.push({ from: parts[0], to: parts[1], enabled: true });
             await saveChannelConfig(env, channelId, config);
             
@@ -214,21 +236,30 @@ export default {
               return new Response('OK');
             }
             
-            if (!text.includes('{caption}')) {
+            config.style_template = text;
+            await saveChannelConfig(env, channelId, config);
+            
+            await editMessage(api, userId, messageId,
+              `✅ Style template set!`,
+              [[{ text: "⬅️ Back to Edit", callback_data: "edit_menu" }]],
+              menuImage
+            );
+          }
+          else if (type === 'replacements_enabled') {
+            if (!channelId) {
               await editMessage(api, userId, messageId,
-                "❌ Template must contain <code>{caption}</code> placeholder\nExample: <code>&lt;b&gt;{caption}&lt;/b&gt;</code>",
-                [[{ text: "Try Again", callback_data: "set_style_template" }]],
+                "❌ Please link a channel first!",
+                [[{ text: "Link Channel", callback_data: "set_link" }]],
                 menuImage
               );
               return new Response('OK');
             }
             
-            config.style_template = text;
-            config.style_caption = true;
+            config.replacements_enabled = text.toLowerCase() === 'true' || text.toLowerCase() === 'yes';
             await saveChannelConfig(env, channelId, config);
             
             await editMessage(api, userId, messageId,
-              `✅ Style template set!\nPreview: ${text.replace('{caption}', 'Sample Caption')}`,
+              `✅ Replacements ${config.replacements_enabled ? 'enabled' : 'disabled'}`,
               [[{ text: "⬅️ Back to Edit", callback_data: "edit_menu" }]],
               menuImage
             );
@@ -296,7 +327,7 @@ export default {
       }
       else if (query.data.startsWith("set_")) {
         const type = query.data.split("_")[1];
-        await env.USER_CONFIG.put(`pending:${userId}`, `${query.data}|${messageId}`);
+        await env.USER_CONFIG.put(`pending:${userId}`, `${query.data}|${messageId}`, { expirationTtl: 3600 });
         await showSetMenu(api, userId, messageId, type, menuImage);
       }
       else if (query.data.startsWith("clear_")) {
@@ -304,7 +335,7 @@ export default {
         await handleSettingClear(api, env, userId, messageId, channelId, config, type, menuImage);
       }
       else if (query.data === "add_replace") {
-        await env.USER_CONFIG.put(`pending:${userId}`, `set_replace|${messageId}`);
+        await env.USER_CONFIG.put(`pending:${userId}`, `set_replace|${messageId}`, { expirationTtl: 3600 });
         await askForReplacement(api, userId, messageId, menuImage);
       }
       else if (query.data.startsWith("del_replace_")) {
@@ -318,6 +349,11 @@ export default {
           await saveChannelConfig(env, channelId, config);
           await showCurrentSettings(api, env, userId, messageId, channelId, config, menuImage);
         }
+      }
+      else if (query.data === "toggle_replacements") {
+        config.replacements_enabled = !config.replacements_enabled;
+        await saveChannelConfig(env, channelId, config);
+        await showCurrentSettings(api, env, userId, messageId, channelId, config, menuImage);
       }
       else if (query.data === "clear_all") {
         await handleClearAll(api, env, userId, messageId, channelId, menuImage);
@@ -344,7 +380,7 @@ export default {
         await showCurrentSettings(api, env, userId, messageId, channelId, config, menuImage);
       }
       else if (query.data === "set_style_template") {
-        await env.USER_CONFIG.put(`pending:${userId}`, `set_style_template|${messageId}`);
+        await env.USER_CONFIG.put(`pending:${userId}`, `set_style_template|${messageId}`, { expirationTtl: 3600 });
         await askForStyleTemplate(api, userId, messageId, menuImage);
       }
 
@@ -374,7 +410,7 @@ async function showMainMenu(api, userId, messageId = null, menuImage) {
   } else {
     const msg = await sendMenu(api, userId, menuText, buttons, menuImage);
     if (msg?.result?.message_id) {
-      currentMenuMessages[userId] = msg.result.message_id;
+      await setCurrentMenuMessage(userId, msg.result.message_id);
     }
   }
 }
@@ -392,7 +428,8 @@ async function showEditMenu(api, userId, messageId, menuImage) {
         { text: "🔗 Channel Link", callback_data: "set_link" }
       ],
       [
-        { text: "🎨 Style Template", callback_data: "set_style_template" }
+        { text: "🎨 Style Template", callback_data: "set_style_template" },
+        { text: "🔤 Text Replacements", callback_data: "toggle_replacements" }
       ],
       [
         { text: "⬅️ Back", callback_data: "main_menu" }
@@ -404,15 +441,16 @@ async function showEditMenu(api, userId, messageId, menuImage) {
 
 async function showSetMenu(api, userId, messageId, type, menuImage) {
   const examples = {
-    prefix: "📝 Example: <b>Movie Night</b> or <i>Latest Release</i>",
-    suffix: "📝 Example: <u>Download Link</u> or <code>In Bio</code>",
+    prefix: "📝 Example: <b>🔥New Movie:</b>\nThis will be added before your caption",
+    suffix: "📝 Example: <b>Join @YourChannel</b>\nThis will be added after your caption",
     forward: "📝 Enter channel ID or username\nSend 'disabled' to turn off forwarding",
     link: "📝 Enter your channel ID",
-    style_template: "📝 Enter HTML template with <code>{caption}</code> placeholder\nExample: <code>&lt;b&gt;{caption}&lt;/b&gt;</code>"
+    style_template: "📝 Enter HTML template with <code>{caption}</code> placeholder\nExample: <code>&lt;b&gt;{caption}&lt;/b&gt;</code>",
+    replacements_enabled: "📝 Enable/disable text replacements (true/false)"
   };
 
   await editMessage(api, userId, messageId,
-    `✏️ <b>Set ${type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</b>\n\n${examples[type]}\n\nPlease type your new ${type.replace('_', ' ')}:`,
+    `✏️ <b>Set ${type.charAt(0).toUpperCase() + type.slice(1)}</b>\n\n${examples[type]}\n\nPlease type your new ${type.replace('_', ' ')}:`,
     [[{ text: "❌ Cancel", callback_data: "edit_menu" }]],
     menuImage
   );
@@ -431,10 +469,10 @@ async function askForReplacement(api, userId, messageId, menuImage) {
 async function askForStyleTemplate(api, userId, messageId, menuImage) {
   await editMessage(api, userId, messageId,
     "🎨 <b>Set Style Template</b>\n\nEnter HTML template with <code>{caption}</code> placeholder:\n\nExamples:\n" +
+    "- <code>{caption}</code> (default, no formatting)\n" +
     "- <code>&lt;b&gt;{caption}&lt;/b&gt;</code>\n" +
     "- <code>&lt;i&gt;&lt;u&gt;{caption}&lt;/u&gt;&lt;/i&gt;</code>\n" +
-    "- <code>&lt;tg-spoiler&gt;{caption}&lt;/tg-spoiler&gt;</code>\n" +
-    "- <code>&lt;b&gt;{caption}&lt;/b&gt;\n&lt;a href=\"https://example.com\"&gt;Download&lt;/a&gt;</code>\n\n" +
+    "- <code>&lt;tg-spoiler&gt;{caption}&lt;/tg-spoiler&gt;</code>\n\n" +
     "Available tags: <b>bold</b>, <i>italic</i>, <u>underline</u>, <s>strike</s>, " +
     "<code>mono</code>, <pre>pre</pre>, <blockquote>quote</blockquote>, <tg-spoiler>spoiler</tg-spoiler>, <a href=\"...\">links</a>",
     [
@@ -469,8 +507,12 @@ async function handleSettingClear(api, env, userId, messageId, channelId, config
       await saveChannelConfig(env, channelId, config);
       break;
     case "style":
-      config.style_caption = true;
-      config.style_template = "<b>{caption}</b>";
+      config.style_caption = false;
+      config.style_template = "{caption}";
+      await saveChannelConfig(env, channelId, config);
+      break;
+    case "replacements_enabled":
+      config.replacements_enabled = false;
       await saveChannelConfig(env, channelId, config);
       break;
   }
@@ -494,9 +536,10 @@ async function handleClearAll(api, env, userId, messageId, channelId, menuImage)
 
   // Clear all settings except channel link
   await env.USER_CONFIG.put(`channel:${channelId}`, JSON.stringify({ 
-    style_template: "<b>{caption}</b>",
-    style_caption: true,
-    replacements: []
+    style_template: "{caption}",
+    style_caption: false,
+    replacements: [],
+    replacements_enabled: false
   }));
   
   // Clear forwarding config
@@ -525,7 +568,7 @@ async function deleteReplacement(api, env, userId, messageId, channelId, config,
   await saveChannelConfig(env, channelId, config);
 
   await editMessage(api, userId, messageId,
-    `✅ Removed replacement:\n"${removed[0].from}" → "${removed[0].to}"`,
+    `✅ Removed replacement:\n"${escapeHtml(removed[0].from)}" → "${escapeHtml(removed[0].to)}"`,
     [[{ text: "⬅️ Back", callback_data: "view_settings" }]],
     menuImage
   );
@@ -535,23 +578,24 @@ async function deleteReplacement(api, env, userId, messageId, channelId, config,
 async function showCurrentSettings(api, env, userId, messageId, channelId, config, menuImage) {
   let message = "🔍 <b>Current Settings</b>\n\n";
   message += `🔗 Channel: <code>${channelId || "Not linked"}</code>\n\n`;
-  message += `🔠 Prefix: ${config.prefix ? config.prefix : "<i>Not set</i>"}\n`;
-  message += `🔣 Suffix: ${config.suffix ? config.suffix : "<i>Not set</i>"}\n\n`;
+  message += `🔠 Prefix: ${config.prefix ? escapeHtml(config.prefix) : "<i>Not set</i>"}\n`;
+  message += `🔣 Suffix: ${config.suffix ? escapeHtml(config.suffix) : "<i>Not set</i>"}\n\n`;
   
   const forwardConfigRaw = channelId ? await env.USER_CONFIG.get(`forward:${channelId}`) : null;
   const forwardConfig = forwardConfigRaw ? JSON.parse(forwardConfigRaw) : { enabled: false, chat_id: null };
   message += `➡️ Forwarding: ${forwardConfig.enabled ? `✅ Enabled to <code>${forwardConfig.chat_id || 'no target'}</code>` : '❌ Disabled'}\n\n`;
   
-  message += `🎨 Caption Styling: ${config.style_caption !== false ? '✅ Enabled' : '❌ Disabled'}\n`;
+  message += `🎨 Caption Styling: ${config.style_caption ? '✅ Enabled' : '❌ Disabled'}\n`;
   if (config.style_template) {
     message += `Template: <code>${escapeHtml(config.style_template)}</code>\n`;
     message += `Preview: ${config.style_template.replace('{caption}', 'Sample Text')}\n\n`;
   } else {
-    message += "Template: <b>Default bold</b>\n\n";
+    message += "Template: <i>Default (no formatting)</i>\n\n";
   }
   
+  message += `🔄 Text Replacements: ${config.replacements_enabled ? '✅ Enabled' : '❌ Disabled'}\n`;
   if (config.replacements?.length > 0) {
-    message += "🔄 <b>Replacements:</b>\n";
+    message += "<b>Current Rules:</b>\n";
     config.replacements.forEach((rep, i) => {
       message += `${i+1}. <code>${escapeHtml(rep.from)}</code> → <code>${escapeHtml(rep.to)}</code>\n`;
     });
@@ -574,8 +618,14 @@ async function showCurrentSettings(api, env, userId, messageId, channelId, confi
       callback_data: "toggle_forwarding" 
     },
     { 
-      text: config.style_caption !== false ? "🔴 Disable Style" : "🟢 Enable Style", 
+      text: config.style_caption ? "🔴 Disable Style" : "🟢 Enable Style", 
       callback_data: "toggle_style" 
+    }
+  ]);
+  buttons.push([
+    { 
+      text: config.replacements_enabled ? "🔴 Disable Replace" : "🟢 Enable Replace", 
+      callback_data: "toggle_replacements" 
     }
   ]);
   buttons.push([{ text: "⬅️ Menu", callback_data: "main_menu" }]);
@@ -619,7 +669,7 @@ async function editMessage(api, chatId, messageId, text, buttons, photo) {
     }
     const msg = await sendMenu(api, chatId, text, buttons, photo);
     if (msg?.result?.message_id) {
-      currentMenuMessages[chatId] = msg.result.message_id;
+      await setCurrentMenuMessage(chatId, msg.result.message_id);
     }
   } else {
     await fetch(api("editMessageText"), {
@@ -652,11 +702,35 @@ async function sendText(api, chatId, text, options = {}) {
 
 async function getChannelConfig(env, channelId) {
   const configRaw = await env.USER_CONFIG.get(`channel:${channelId}`);
-  return configRaw ? JSON.parse(configRaw) : { style_template: "<b>{caption}</b>", style_caption: true };
+  const config = configRaw ? JSON.parse(configRaw) : { 
+    style_template: "{caption}", 
+    style_caption: false,
+    replacements: [],
+    replacements_enabled: false
+  };
+  
+  // Ensure config has required structure
+  if (!Array.isArray(config.replacements)) config.replacements = [];
+  if (typeof config.style_caption === 'undefined') config.style_caption = false;
+  if (!config.style_template) config.style_template = "{caption}";
+  if (typeof config.replacements_enabled === 'undefined') config.replacements_enabled = false;
+  
+  return config;
 }
 
 async function saveChannelConfig(env, channelId, config) {
-  await env.USER_CONFIG.put(`channel:${channelId}`, JSON.stringify(config));
+  // Ensure we don't save undefined values
+  const cleanConfig = {
+    style_template: config.style_template || "{caption}",
+    style_caption: config.style_caption === true,
+    replacements: Array.isArray(config.replacements) ? config.replacements : [],
+    replacements_enabled: config.replacements_enabled === true
+  };
+  
+  if (config.prefix !== undefined) cleanConfig.prefix = config.prefix;
+  if (config.suffix !== undefined) cleanConfig.suffix = config.suffix;
+  
+  await env.USER_CONFIG.put(`channel:${channelId}`, JSON.stringify(cleanConfig));
 }
 
 function formatCaption(caption, config) {
@@ -743,14 +817,19 @@ async function forwardMessageWithoutTag(api, originalPost, targetChatId, newCapt
 
 async function checkSubscription(api, userId, env) {
   const check = async (chat) => {
-    const res = await fetch(api("getChatMember"), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, user_id: userId })
-    });
-    const data = await res.json();
-    const status = data.result?.status;
-    return ['creator', 'administrator', 'member'].includes(status);
+    try {
+      const res = await fetch(api("getChatMember"), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chat, user_id: userId })
+      });
+      const data = await res.json();
+      const status = data.result?.status;
+      return ['creator', 'administrator', 'member'].includes(status);
+    } catch (e) {
+      console.error(`Failed to check membership in ${chat}:`, e);
+      return false;
+    }
   };
 
   const inChannel = await check(env.FORCE_CHANNEL);
@@ -769,16 +848,20 @@ async function getOrCreateInviteLink(api, env, type, chatId) {
     return link;
   }
 
-  const res = await fetch(api("createChatInviteLink"), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId })
-  });
-  const data = await res.json();
-  if (data.ok) {
-    link = data.result.invite_link;
-    await env.USER_CONFIG.put(kvKey, link);
-    return link;
+  try {
+    const res = await fetch(api("createChatInviteLink"), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      link = data.result.invite_link;
+      await env.USER_CONFIG.put(kvKey, link);
+      return link;
+    }
+  } catch (e) {
+    console.error("Failed to create invite link:", e);
   }
 
   return "https://t.me/";
