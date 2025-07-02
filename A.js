@@ -1,12 +1,3 @@
-// Move these to the top level of your worker (outside the export default)
-async function getCurrentMenuMessage(env, userId) {
-  return await env.USER_CONFIG.get(`menu_msg:${userId}`);
-}
-
-async function setCurrentMenuMessage(env, userId, messageId) {
-  await env.USER_CONFIG.put(`menu_msg:${userId}`, messageId.toString());
-}
-
 export default {
   async fetch(request, env, ctx) {
     if (request.method !== 'POST') return new Response('Only POST allowed');
@@ -17,8 +8,17 @@ export default {
     const menuImage = "https://raw.githubusercontent.com/svnig7/svnig7/refs/heads/main/imdbbotl.png";
     const OWNER_ID = env.OWNER_ID;
 
-    async function cleanupOldMenu(api, env, userId) {
-      const oldMessageId = await getCurrentMenuMessage(env, userId);
+    // Helper to track current menu message in KV
+    async function getCurrentMenuMessage(userId) {
+      return await env.USER_CONFIG.get(`menu_msg:${userId}`);
+    }
+
+    async function setCurrentMenuMessage(userId, messageId) {
+      await env.USER_CONFIG.put(`menu_msg:${userId}`, messageId.toString());
+    }
+
+    async function cleanupOldMenu(api, userId) {
+      const oldMessageId = await getCurrentMenuMessage(userId);
       if (oldMessageId) {
         try {
           await fetch(api("deleteMessage"), {
@@ -35,7 +35,7 @@ export default {
         await env.USER_CONFIG.delete(`menu_msg:${userId}`);
       }
     }
-
+    
     // === 1. Handle Channel Post ===
     if (update.channel_post) {
       const post = update.channel_post;
@@ -406,11 +406,11 @@ async function showMainMenu(api, userId, messageId = null, menuImage) {
   ];
 
   if (messageId) {
-    await editMessage(api, env, userId, messageId, menuText, buttons, menuImage);
+    await editMessage(api, userId, messageId, menuText, buttons, menuImage);
   } else {
     const msg = await sendMenu(api, userId, menuText, buttons, menuImage);
     if (msg?.result?.message_id) {
-      await setCurrentMenuMessage(env, userId, msg.result.message_id);
+      await setCurrentMenuMessage(userId, msg.result.message_id);
     }
   }
 }
@@ -653,7 +653,7 @@ async function sendMenu(api, chatId, text, buttons, photo) {
   }
 }
 
-async function editMessage(api, env, chatId, messageId, text, buttons, photo) {
+async function editMessage(api, chatId, messageId, text, buttons, photo) {
   if (photo) {
     try {
       await fetch(api("deleteMessage"), {
@@ -669,7 +669,7 @@ async function editMessage(api, env, chatId, messageId, text, buttons, photo) {
     }
     const msg = await sendMenu(api, chatId, text, buttons, photo);
     if (msg?.result?.message_id) {
-      await setCurrentMenuMessage(env, chatId, msg.result.message_id);
+      await setCurrentMenuMessage(chatId, msg.result.message_id);
     }
   } else {
     await fetch(api("editMessageText"), {
