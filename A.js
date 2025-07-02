@@ -1,3 +1,86 @@
+// Utility functions
+async function getCurrentMenuMessage(env, userId) {
+  return await env.USER_CONFIG.get(`menu_msg:${userId}`);
+}
+
+async function setCurrentMenuMessage(env, userId, messageId) {
+  await env.USER_CONFIG.put(`menu_msg:${userId}`, messageId.toString());
+}
+
+async function cleanupOldMenu(api, env, userId) {
+  const oldMessageId = await getCurrentMenuMessage(env, userId);
+  if (oldMessageId) {
+    try {
+      await fetch(api("deleteMessage"), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: userId,
+          message_id: oldMessageId
+        })
+      });
+    } catch (e) {
+      console.error("Failed to delete old menu:", e);
+    }
+    await env.USER_CONFIG.delete(`menu_msg:${userId}`);
+  }
+}
+
+// Message sending functions
+async function sendMenu(api, env, chatId, text, buttons, photo) {
+  try {
+    const response = await fetch(api(photo ? "sendPhoto" : "sendMessage"), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        ...(photo ? { photo, caption: text } : { text }),
+        parse_mode: "HTML",
+        reply_markup: { inline_keyboard: buttons }
+      })
+    });
+    const result = await response.json();
+    if (result.ok && photo) {
+      await setCurrentMenuMessage(env, chatId, result.result.message_id);
+    }
+    return result;
+  } catch (e) {
+    console.error("Failed to send menu:", e);
+    return null;
+  }
+}
+
+async function editMessage(api, env, chatId, messageId, text, buttons, photo) {
+  if (photo) {
+    try {
+      await fetch(api("deleteMessage"), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          message_id: messageId
+        })
+      });
+    } catch (e) {
+      console.error("Failed to delete message:", e);
+    }
+    return await sendMenu(api, env, chatId, text, buttons, photo);
+  } else {
+    await fetch(api("editMessageText"), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId,
+        text,
+        parse_mode: "HTML",
+        reply_markup: buttons ? { inline_keyboard: buttons } : undefined
+      })
+    });
+  }
+}
+
+// Main worker
 export default {
   async fetch(request, env, ctx) {
     if (request.method !== 'POST') return new Response('Only POST allowed');
@@ -7,34 +90,6 @@ export default {
     const api = (method) => `https://api.telegram.org/bot${token}/${method}`;
     const menuImage = "https://raw.githubusercontent.com/svnig7/svnig7/refs/heads/main/imdbbotl.png";
     const OWNER_ID = env.OWNER_ID;
-
-    // Helper to track current menu message in KV
-    async function getCurrentMenuMessage(userId) {
-      return await env.USER_CONFIG.get(`menu_msg:${userId}`);
-    }
-
-    async function setCurrentMenuMessage(userId, messageId) {
-      await env.USER_CONFIG.put(`menu_msg:${userId}`, messageId.toString());
-    }
-
-    async function cleanupOldMenu(api, userId) {
-      const oldMessageId = await getCurrentMenuMessage(userId);
-      if (oldMessageId) {
-        try {
-          await fetch(api("deleteMessage"), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: userId,
-              message_id: oldMessageId
-            })
-          });
-        } catch (e) {
-          console.error("Failed to delete old menu:", e);
-        }
-        await env.USER_CONFIG.delete(`menu_msg:${userId}`);
-      }
-    }
     
     // === 1. Handle Channel Post ===
     if (update.channel_post) {
@@ -631,59 +686,6 @@ async function showCurrentSettings(api, env, userId, messageId, channelId, confi
   buttons.push([{ text: "⬅️ Menu", callback_data: "main_menu" }]);
 
   await editMessage(api, userId, messageId, message, buttons, menuImage);
-}
-
-// ===== UTILITY FUNCTIONS =====
-async function sendMenu(api, chatId, text, buttons, photo) {
-  try {
-    const response = await fetch(api(photo ? "sendPhoto" : "sendMessage"), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        ...(photo ? { photo, caption: text } : { text }),
-        parse_mode: "HTML",
-        reply_markup: { inline_keyboard: buttons }
-      })
-    });
-    return await response.json();
-  } catch (e) {
-    console.error("Failed to send menu:", e);
-    return null;
-  }
-}
-
-async function editMessage(api, chatId, messageId, text, buttons, photo) {
-  if (photo) {
-    try {
-      await fetch(api("deleteMessage"), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          message_id: messageId
-        })
-      });
-    } catch (e) {
-      console.error("Failed to delete message:", e);
-    }
-    const msg = await sendMenu(api, chatId, text, buttons, photo);
-    if (msg?.result?.message_id) {
-      await setCurrentMenuMessage(chatId, msg.result.message_id);
-    }
-  } else {
-    await fetch(api("editMessageText"), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        message_id: messageId,
-        text,
-        parse_mode: "HTML",
-        reply_markup: buttons ? { inline_keyboard: buttons } : undefined
-      })
-    });
-  }
 }
 
 async function sendText(api, chatId, text, options = {}) {
