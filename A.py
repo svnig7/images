@@ -348,4 +348,87 @@ async def auto_index_file(client, msg: Message):
         if media:
             save_file(media.file_id, msg.caption, msg.id, msg.chat.id)
 
+@app.on_message(filters.command("help"))
+async def help_cmd(client, msg: Message):
+    ok, kb = await check_force_sub(client, msg.from_user.id)
+    if not ok:
+        return await msg.reply("🔒 Please join required channels to use the bot.", reply_markup=kb)
+
+    text = (
+        "**📚 Bot Commands:**\n\n"
+        "/start - Show welcome message\n"
+        "/help - Show this help menu\n"
+        "/search <query> - Search for files\n"
+        "/stats - Show bot statistics\n\n"
+        "**🔐 Admin Commands:**\n"
+        "/indexall - Re-index all files from channels\n"
+        "/broadcast <text> - Send message to all users\n\n"
+        "**🔎 Inline Mode:**\n"
+        "Type `@YourBotName query` in any chat to search inline."
+    )
+    await msg.reply(text, disable_web_page_preview=True)
+
+@app.on_message(filters.command("settings"))
+async def settings_cmd(client, msg: Message):
+    from config import SEND_FILE_INSTEAD_OF_LINK
+    ok, kb = await check_force_sub(client, msg.from_user.id)
+    if not ok:
+        return await msg.reply("🔒 Please join required channels to use the bot.", reply_markup=kb)
+
+    if msg.from_user.id != BOT_OWNER_ID:
+        return await msg.reply("❌ Only the bot owner can view settings.")
+
+    await msg.reply(
+        f"**⚙️ Bot Settings:**\n\n"
+        f"🔗 Force Channel: `{FORCE_CHANNEL}`\n"
+        f"👥 Force Group: `{FORCE_GROUP}`\n"
+        f"📤 Send File Instead of Link: `{SEND_FILE_INSTEAD_OF_LINK}`\n"
+        f"📚 Indexed Channels: `{INDEX_CHANNELS}`\n"
+    )
+
+@app.on_message(filters.command("admin"))
+async def admin_cmd(client, msg: Message):
+    if msg.from_user.id != BOT_OWNER_ID:
+        return await msg.reply("❌ Only the bot owner can access this panel.")
+
+    text = (
+        "**🛠️ Admin Panel**\n\n"
+        f"🔗 Force Channel: `{FORCE_CHANNEL}`\n"
+        f"👥 Force Group: `{FORCE_GROUP}`\n"
+        f"📤 Send File Mode: `{SEND_FILE_INSTEAD_OF_LINK}`\n"
+    )
+    buttons = [
+        [InlineKeyboardButton("🔁 Toggle Send Mode", callback_data="toggle_send_mode")],
+        [InlineKeyboardButton("🔄 Reload Config", callback_data="reload_config")]
+    ]
+    await msg.reply(text, reply_markup=InlineKeyboardMarkup(buttons))
+
+@app.on_callback_query(filters.regex("toggle_send_mode"))
+async def toggle_send_mode(client, cb: CallbackQuery):
+    if cb.from_user.id != BOT_OWNER_ID:
+        return await cb.answer("Unauthorized", show_alert=True)
+
+    new_state = not cfg.SEND_FILE_INSTEAD_OF_LINK
+    with open("config.py", "r") as f:
+        content = f.read()
+    content = content.replace(
+        f"SEND_FILE_INSTEAD_OF_LINK = {cfg.SEND_FILE_INSTEAD_OF_LINK}",
+        f"SEND_FILE_INSTEAD_OF_LINK = {new_state}"
+    )
+    with open("config.py", "w") as f:
+        f.write(content)
+    cfg.SEND_FILE_INSTEAD_OF_LINK = new_state
+    await cb.answer("Toggled send mode.", show_alert=True)
+    await cb.message.edit_text("✅ Send mode toggled. Please restart the bot to apply changes.")
+
+@app.on_callback_query(filters.regex("reload_config"))
+async def reload_config(client, cb: CallbackQuery):
+    if cb.from_user.id != BOT_OWNER_ID:
+        return await cb.answer("Unauthorized", show_alert=True)
+
+    import importlib
+    importlib.reload(cfg)
+    await cb.answer("🔄 Config reloaded.", show_alert=True)
+    await cb.message.edit_text("✅ Configuration reloaded successfully.")
+
 app.run()
