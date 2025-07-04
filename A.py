@@ -432,3 +432,235 @@ async def reload_config(client, cb: CallbackQuery):
     await cb.message.edit_text("✅ Configuration reloaded successfully.")
 
 app.run()
+
+
+# bot.py
+
+# Main file for Telegram file search bot
+# Contains all command handlers, inline support, and admin panel.
+
+from pyrogram import Client, filters
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InlineQuery, InlineQueryResultArticle, InputTextMessageContent
+from config import *
+from database import *
+import humanize
+import importlib
+
+app = Client("file-search-bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+
+@app.on_message(filters.private & filters.incoming)
+async def log_users(client, msg: Message):
+    save_user(msg.from_user.id, msg.from_user.first_name)
+
+async def check_force_sub(client, user_id):
+    try:
+        await client.get_chat_member(FORCE_CHANNEL, user_id)
+        await client.get_chat_member(FORCE_GROUP, user_id)
+        return True, None
+    except:
+        btn = [[InlineKeyboardButton("📢 Join Channel", url=f"https://t.me/c/{str(FORCE_CHANNEL)[4:]}/1")], [InlineKeyboardButton("💬 Join Group", url=f"https://t.me/c/{str(FORCE_GROUP)[4:]}/1")]]
+        return False, InlineKeyboardMarkup(btn)
+
+@app.on_message(filters.command("start"))
+async def start_cmd(client, msg: Message):
+    ok, kb = await check_force_sub(client, msg.from_user.id)
+    if not ok:
+        return await msg.reply("🔒 Please join required channels to use the bot.", reply_markup=kb)
+
+    param = msg.command[1] if len(msg.command) > 1 else ""
+    if param.startswith("send_"):
+        _, chat_id, message_id = param.split("_")
+        try:
+            await client.copy_message(chat_id=msg.chat.id, from_chat_id=int(chat_id), message_id=int(message_id))
+        except:
+            await msg.reply("❌ Failed to send file.")
+        return
+    await msg.reply("👋 Welcome! Use /search <query> to find files.")
+
+@app.on_message(filters.command("search"))
+async def search_handler(client, msg: Message):
+    ok, kb = await check_force_sub(client, msg.from_user.id)
+    if not ok:
+        return await msg.reply("🔒 Please join required channels to use this bot.", reply_markup=kb)
+
+    parts = msg.text.split(maxsplit=1)
+    if len(parts) < 2:
+        return await msg.reply("Usage: /search <query>")
+
+    query = parts[1]
+    page = 1
+    limit = 5
+    files = search_files(query)
+    total = len(files)
+    total_pages = (total + limit - 1) // limit
+    results = files[(page - 1) * limit : page * limit]
+
+    if not results:
+        return await msg.reply("No results found.")
+
+    if SEND_FILE_INSTEAD_OF_LINK:
+        for f in results:
+            try:
+                await client.copy_message(chat_id=msg.chat.id, from_chat_id=f['chat_id'], message_id=f['message_id'])
+            except:
+                pass
+        return
+
+    text = f"🔍 **Results for:** `{query}` (Page {page}/{total_pages})\n\n"
+    for i, file in enumerate(results, 1):
+        link = f"https://t.me/c/{str(file['chat_id'])[4:]}/{file['message_id']}"
+        text += f"{i}. [{file['caption'][:50]}]({link})\n"
+
+    buttons = []
+    if total_pages > 1:
+        buttons.append([InlineKeyboardButton("Next ⏩", callback_data=f"page_{query}_2")])
+
+    await msg.reply(text, reply_markup=InlineKeyboardMarkup(buttons) if buttons else None, disable_web_page_preview=True)
+
+@app.on_callback_query(filters.regex(r"^page_(.+)_(\d+)$"))
+async def pagination_callback(client, query: CallbackQuery):
+    q, p = query.matches[0].group(1), int(query.matches[0].group(2))
+    files = search_files(q)
+    limit = 5
+    total = len(files)
+    total_pages = (total + limit - 1) // limit
+    results = files[(p - 1) * limit : p * limit]
+    if not results:
+        return await query.answer("No more results.")
+
+    if SEND_FILE_INSTEAD_OF_LINK:
+        await query.message.delete()
+        for f in results:
+            try:
+                await client.copy_message(chat_id=query.from_user.id, from_chat_id=f['chat_id'], message_id=f['message_id'])
+            except:
+                pass
+        return await query.answer("✅ Files sent via bot.")
+
+    text = f"🔍 **Results for:** `{q}` (Page {p}/{total_pages})\n\n"
+    for i, file in enumerate(results, 1):
+        link = f"https://t.me/c/{str(file['chat_id'])[4:]}/{file['message_id']}"
+        text += f"{i}. [{file['caption'][:50]}]({link})\n"
+
+    nav = []
+    if p > 1:
+        nav.append(InlineKeyboardButton("⏪ Prev", callback_data=f"page_{q}_{p-1}"))
+    if p < total_pages:
+        nav.append(InlineKeyboardButton("Next ⏩", callback_data=f"page_{q}_{p+1}"))
+
+    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup([nav]) if nav else None, disable_web_page_preview=True)
+    await query.answer()
+
+@app.on_inline_query()
+async def inline_query_handler(client, inline_query: InlineQuery):
+    ok, _ = await check_force_sub(client, inline_query.from_user.id)
+    if not ok:
+        return await client.answer_inline_query(
+            inline_query.id,
+            results=[],
+            switch_pm_text="🔐 Join required channel & group",
+            switch_pm_parameter="force_sub"
+        )
+
+    query = inline_query.query.strip()
+    results = []
+    if query:
+        files = search_files(query)[:10]
+        if SEND_FILE_INSTEAD_OF_LINK:
+            for file in files:
+                results.append(
+                    InlineQueryResultArticle(
+                        title=file['caption'][:60],
+                        input_message_content=InputTextMessageContent(
+                            f"Send this file: /start send_{file['chat_id']}_{file['message_id']}"
+                        ),
+                        description="Click to send via bot"
+                    )
+                )
+        else:
+            for file in files:
+                link = f"https://t.me/c/{str(file['chat_id'])[4:]}/{file['message_id']}"
+                title = file['caption'][:60] if file['caption'] else "Unnamed"
+                results.append(
+                    InlineQueryResultArticle(
+                        title=title,
+                        input_message_content=InputTextMessageContent(f"[{title}]({link})", disable_web_page_preview=True),
+                        description="Click to view",
+                    )
+                )
+    await client.answer_inline_query(inline_query.id, results, cache_time=1)
+
+@app.on_message(filters.command("help"))
+async def help_cmd(client, msg: Message):
+    ok, kb = await check_force_sub(client, msg.from_user.id)
+    if not ok:
+        return await msg.reply("🔒 Please join required channels to use the bot.", reply_markup=kb)
+
+    text = (
+        "**📚 Bot Commands:**\n\n"
+        "/start - Show welcome message\n"
+        "/help - Show this help menu\n"
+        "/search <query> - Search for files\n"
+        "/stats - Show bot statistics\n\n"
+        "**🔐 Admin Commands:**\n"
+        "/indexall - Re-index all files from channels\n"
+        "/broadcast <text> - Send message to all users\n"
+        "/admin - Admin panel to control toggles\n\n"
+        "**🔎 Inline Mode:**\n"
+        "Type `@YourBotName query` in any chat to search inline."
+    )
+    await msg.reply(text, disable_web_page_preview=True)
+
+@app.on_message(filters.command("admin"))
+async def admin_cmd(client, msg: Message):
+    if msg.from_user.id != BOT_OWNER_ID:
+        return await msg.reply("❌ Only the bot owner can access this panel.")
+
+    text = (
+        "**🛠️ Admin Panel**\n\n"
+        f"🔗 Force Channel: `{FORCE_CHANNEL}`\n"
+        f"👥 Force Group: `{FORCE_GROUP}`\n"
+        f"📤 Send File Mode: `{SEND_FILE_INSTEAD_OF_LINK}`\n"
+    )
+    buttons = [
+        [InlineKeyboardButton("🔁 Toggle Send Mode", callback_data="toggle_send_mode")],
+        [InlineKeyboardButton("🔄 Reload Config", callback_data="reload_config")]
+    ]
+    await msg.reply(text, reply_markup=InlineKeyboardMarkup(buttons))
+
+@app.on_callback_query(filters.regex("toggle_send_mode"))
+async def toggle_send_mode(client, cb: CallbackQuery):
+    if cb.from_user.id != BOT_OWNER_ID:
+        return await cb.answer("Unauthorized", show_alert=True)
+
+    new_state = not SEND_FILE_INSTEAD_OF_LINK
+    with open("config.py", "r") as f:
+        content = f.read()
+    content = content.replace(
+        f"SEND_FILE_INSTEAD_OF_LINK = {SEND_FILE_INSTEAD_OF_LINK}",
+        f"SEND_FILE_INSTEAD_OF_LINK = {new_state}"
+    )
+    with open("config.py", "w") as f:
+        f.write(content)
+    await cb.answer("Toggled send mode.", show_alert=True)
+    await cb.message.edit_text("✅ Send mode toggled. Please restart the bot to apply changes.")
+
+@app.on_callback_query(filters.regex("reload_config"))
+async def reload_config(client, cb: CallbackQuery):
+    if cb.from_user.id != BOT_OWNER_ID:
+        return await cb.answer("Unauthorized", show_alert=True)
+    importlib.reload(cfg)
+    await cb.answer("🔄 Config reloaded.", show_alert=True)
+    await cb.message.edit_text("✅ Configuration reloaded successfully.")
+
+@app.on_message(filters.command("stats"))
+async def stats_cmd(client, msg: Message):
+    ok, kb = await check_force_sub(client, msg.from_user.id)
+    if not ok:
+        return await msg.reply("🔒 Please join required channels to use the bot.", reply_markup=kb)
+
+    total_users = get_total_user_count()
+    total_files = get_total_file_count()
+    await msg.reply(f"📊 Stats:\n👤 Users: {total_users}\n📁 Files: {total_files}")
+
+app.run()
