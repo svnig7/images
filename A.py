@@ -147,8 +147,13 @@ async def start_cmd(client, msg: Message):
     if not ok:
         return await msg.reply("🔒 Please join required channels to use the bot.", reply_markup=kb)
     param = msg.command[1] if len(msg.command) > 1 else ""
-    if param == "force_sub":
-        return await msg.reply("✅ You're verified! Try again.")
+    if param.startswith("send_"):
+        _, chat_id, message_id = param.split("_")
+        try:
+            await client.copy_message(chat_id=msg.chat.id, from_chat_id=int(chat_id), message_id=int(message_id))
+        except:
+            await msg.reply("❌ Failed to send file.")
+        return
     await msg.reply("👋 Welcome! Use /search <query> to begin.")
 
 @app.on_message(filters.command("search"))
@@ -172,6 +177,15 @@ async def search_handler(client, msg: Message):
     if not results:
         return await msg.reply("No results found.")
 
+    from config import SEND_FILE_INSTEAD_OF_LINK
+    if SEND_FILE_INSTEAD_OF_LINK:
+        for f in results:
+            try:
+                await client.copy_message(chat_id=msg.chat.id, from_chat_id=f['chat_id'], message_id=f['message_id'])
+            except:
+                pass
+        return
+
     text = f"🔍 **Results for:** `{query}` (Page {page}/{total_pages})\n\n"
     for i, file in enumerate(results, 1):
         link = f"https://t.me/c/{str(file['chat_id'])[4:]}/{file['message_id']}"
@@ -185,6 +199,7 @@ async def search_handler(client, msg: Message):
 
 @app.on_callback_query(filters.regex(r"^page_(.+)_(\d+)$"))
 async def pagination_callback(client, query: CallbackQuery):
+    from config import SEND_FILE_INSTEAD_OF_LINK
     q, p = query.matches[0].group(1), int(query.matches[0].group(2))
     files = search_files(q)
     limit = 5
@@ -193,6 +208,15 @@ async def pagination_callback(client, query: CallbackQuery):
     results = files[(p - 1) * limit : p * limit]
     if not results:
         return await query.answer("No more results.")
+
+    if SEND_FILE_INSTEAD_OF_LINK:
+        await query.message.delete()
+        for f in results:
+            try:
+                await client.copy_message(chat_id=query.from_user.id, from_chat_id=f['chat_id'], message_id=f['message_id'])
+            except:
+                pass
+        return await query.answer("✅ Files sent via bot.")
 
     text = f"🔍 **Results for:** `{q}` (Page {p}/{total_pages})\n\n"
     for i, file in enumerate(results, 1):
@@ -278,6 +302,7 @@ async def broadcast_handler(client, msg: Message):
 
 @app.on_inline_query()
 async def inline_query_handler(client, inline_query: InlineQuery):
+    from config import SEND_FILE_INSTEAD_OF_LINK
     ok, _ = await check_force_sub(client, inline_query.from_user.id)
     if not ok:
         return await client.answer_inline_query(
@@ -291,16 +316,29 @@ async def inline_query_handler(client, inline_query: InlineQuery):
     results = []
     if query:
         files = search_files(query)[:10]
-        for file in files:
-            link = f"https://t.me/c/{str(file['chat_id'])[4:]}/{file['message_id']}"
-            title = file['caption'][:60] if file['caption'] else "Unnamed"
-            results.append(
-                InlineQueryResultArticle(
-                    title=title,
-                    input_message_content=InputTextMessageContent(f"[{title}]({link})", disable_web_page_preview=True),
-                    description="Click to view",
+        if SEND_FILE_INSTEAD_OF_LINK:
+            for file in files:
+                # This will just send a button that triggers deep link for /start
+                results.append(
+                    InlineQueryResultArticle(
+                        title=file['caption'][:60] if file['caption'] else "Unnamed",
+                        input_message_content=InputTextMessageContent(
+                            f"Send this file: /start send_{file['chat_id']}_{file['message_id']}"
+                        ),
+                        description="Click to send via bot"
+                    )
                 )
-            )
+        else:
+            for file in files:
+                link = f"https://t.me/c/{str(file['chat_id'])[4:]}/{file['message_id']}"
+                title = file['caption'][:60] if file['caption'] else "Unnamed"
+                results.append(
+                    InlineQueryResultArticle(
+                        title=title,
+                        input_message_content=InputTextMessageContent(f"[{title}]({link})", disable_web_page_preview=True),
+                        description="Click to view",
+                    )
+                )
     await client.answer_inline_query(inline_query.id, results, cache_time=1)
 
 @app.on_message(filters.channel & (filters.document | filters.video | filters.audio))
